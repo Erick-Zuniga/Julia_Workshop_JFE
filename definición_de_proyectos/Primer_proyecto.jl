@@ -171,31 +171,13 @@ md"
 ## Definición de objetos y funciones
 "
 
-# ╔═╡ 56c3949c-462c-11eb-058f-ef53a7395810
-md"
-+ A continuación construya un struct `Grid` (Grilla), donde se defina la región del plano complejo que debe ser analizado (límites en las abcisas y ordenadas) y el espacio entre cada punto de la grilla.
-"
-
-# ╔═╡ f915f344-3a00-11eb-16a9-6be5b192810c
-"""*
- Representa un objeto grilla 
-"""
-struct Grid{T<:Real}
-	
-end
-
-# ╔═╡ f1207c62-4631-11eb-30cb-691cbcca8574
-md"
-+ Defina una función que cree una matriz de rangos para los ejes de las abcisas y ordenas. 
-"
-
 # ╔═╡ 1dc63efc-39d6-11eb-3b8d-15da426e82a1
 """
 	makeGrid(g::Grid)
-Crear una matriz de rangos [rango_abcisas,rango_ordenadas]
+Crear una matriz de complejos
 """
-function makeGrid(g::Grid)
-	
+function makeGrid(height, width, space)
+	return [x-y*im for y in -height:space:height, x in -width:space:width]
 end
 
 # ╔═╡ 774af954-4635-11eb-31dd-17a273bf9b15
@@ -205,7 +187,7 @@ md"
 
 # ╔═╡ acda722e-4636-11eb-0a76-29912beacb1c
 begin #*
-	
+	f₁(z,c) = z^2 + c
 end
 
 # ╔═╡ 36bed290-4633-11eb-26fe-d15d7d6f03f8
@@ -219,7 +201,7 @@ md"
 Comprobar el criterio de convergencia para los conjuntos de Julia y Mandelbrot
 """
 function testJM(z::Complex)
-	
+	return abs(z) < 2
 end
 
 # ╔═╡ 5466484a-4637-11eb-115f-ab417bd2b802
@@ -233,7 +215,7 @@ md"
 Comprobar el criterio de convergencia para los conjuntos de Julia y Mandelbrot
 """
 function testbiomorph(z::Complex,τ::Real)
-	
+	return real(z) < τ || imag(z) < τ
 end
 
 # ╔═╡ 71f98b8a-4641-11eb-2c9c-7f49f8577365
@@ -246,8 +228,24 @@ md"
 	iterate(test::Function,f::Function,z::Complex,iter::Integer)
 Interar z sobre una funcion f
 """
-function iterate(test::Function,f::Function,z::Complex,iter::Integer)
-	
+function monochromatic(f::Function,test::Function,z::Array{T,2} where T,iter::Integer)
+	for i = 1:iter
+		z = f.(z)
+	end
+	return test.(z)
+end
+
+# ╔═╡ a3485442-595a-11eb-399e-e54347ef249c
+"""
+	iterate(test::Function,f::Function,z::Complex,iter::Integer)
+Interar z sobre una funcion f
+"""
+function monochromatic(f::Function,test::Function,z::Integer, iter::Integer)
+	z = f.(z)
+	for i = 2:iter
+		z = f(z)
+	end
+	return test.(z)
 end
 
 # ╔═╡ fb3a891a-4634-11eb-2228-67741e0f82e2
@@ -260,17 +258,32 @@ md"
 	colormap(f::Function,test::Function,z::Complex,c::Complex,iter::Integer)
 Retornar el número de iteraciones para un valor dado de z minetras un criterio de convergencia sea válido
 """
-function colormap(f::Function,test::Function,z::Complex,c::Complex,iter::Integer)
-	
+function timeEscape(f::Function,test::Function,z::Array{T,2} where T,iter::Integer)
+	iteration = zeros(size(z))
+	for i = 1:iter
+		z = f.(z)
+		iteration += test.(z)
+	end
+	return iteration
+end
+
+# ╔═╡ 63d9ef0e-595b-11eb-043f-3d7c0bf8c926
+"""*
+	colormap(f::Function,test::Function,z::Complex,c::Complex,iter::Integer)
+Retornar el número de iteraciones para un valor dado de z minetras un criterio de convergencia sea válido
+"""
+function timeEscape(f::Function,test::Function,z::Integer,iter::Integer)
+	z = f.(z)
+	iteration = ones(size(z))
+	for i = 2:iter
+		z = f(z)
+		iteration += test.(z)
+	end
+	return iteration
 end
 
 # ╔═╡ 393b931a-46a0-11eb-361d-8da678672d65
 md"+ Usando multiple dispatch, defina nuevamente la función colormap agregando un nuevo parámetro de entrada $\tau$, de modo que se pueda usar el test de convergencia para la forma biológica"
-
-# ╔═╡ 1c510af2-46a0-11eb-08ac-a1d54104fd11
-function colormap(f::Function,test::Function,z::Complex,c::Complex,iter::Integer,τ::Integer)
-	
-end
 
 # ╔═╡ 24bba08a-46e2-11eb-0e42-412ca935f3e7
 md"
@@ -292,29 +305,13 @@ md"
 + Defina una funcion que retorne el conjunto de puntos que pertenecen al conjunto de Julia.
 "
 
-# ╔═╡ 73644592-463b-11eb-09c0-952848e159e3
-"""
-	setjulia()
-Construir un array con los puntos del plano complejo que pertenecen al conjunto, dada la región de análisis del plano complejo
-Entradas:
-- f::Function
-- test::Function
-- grid::Array{T,2} where T
-- c::Complex
-- iter::Integer
-"""
-function setjulia(
-		f::Function,
-		test::Function,
-		grid::Array{T,2} where T,
-		c::Complex,
-		iter::Integer)
-	
-end
-
 # ╔═╡ 553b382e-469e-11eb-3b55-3d189b08538c
 begin
-	
+	grid = makeGrid(1.5, 1.5, 0.005)
+	c = -0.8+0.156im
+	J(z) = f₁(z, c)
+	monojulia = monochromatic(J, testJM, grid, 100)
+	heatmap(monojulia)
 end
 
 # ╔═╡ 639f176a-46e3-11eb-0d26-21e096ca0863
@@ -327,27 +324,11 @@ md"
 + Defina una funcion que retorne el conjunto de puntos que pertenecen al conjunto de Mandelbrot
 "
 
-# ╔═╡ ce8536ce-469d-11eb-3f57-59b7ce9ac946
-"""
-	setmandelbrot()
-Construir un array con los puntos del plano complejo que pertenecen al conjunto, dada la región de análisis del plano complejo
-Entradas:
-- f::Function
-- test::Function
-- grid::Array{T,2} where T
-- iter::Integer
-"""
-function setmandelbrot(
-		f::Function,
-		test::Function,
-		grid::Array{T,2} where T,
-		iter::Integer)
-	
-end
-
 # ╔═╡ fc4feb92-3b5d-11eb-28ff-630169bd8fc2
 begin
-	
+	M(z) = f₁.(z, grid)
+	monomandel = monochromatic(M, testJM, 0, 50)
+	heatmap(monomandel)
 end
 
 # ╔═╡ 847b1e16-46e3-11eb-1581-95c456a7482f
@@ -360,31 +341,13 @@ md"
 + Defina una funcion que retorne el conjunto de puntos que pertenecen al conjunto de una forma biológica.
 "
 
-# ╔═╡ f4f08ecc-469f-11eb-0d11-91bbe2f63dc8
-"""
-	setbiomorph()
-Construir un array con los puntos del plano complejo que pertenecen al conjunto, dada la región de análisis del plano complejo
-Entradas:
-- f::Function
-- test::Function
-- grid::Array{T,2} where T
-- c::Complex
-- iter::Integer
-- τ::Integer
-"""
-function setbiomorph(
-		f::Function,
-		test::Function,
-		grid::Array{T,2} where T,
-		c::Complex,
-		iter::Integer,
-		τ::Integer)
-	
-end
-
 # ╔═╡ 9772cb98-469f-11eb-00b0-312e5a3b75dd
 begin
-	
+	B(z) = sin(z) + z^2 + (0+0im)
+	τ = 100
+	testbio(z) = testbiomorph(z, τ)
+	monobio = monochromatic(B, testbio, grid, 100)
+	heatmap(monobio)
 end
 
 # ╔═╡ b27d4370-46e3-11eb-0b7d-fbe40c187c17
@@ -394,23 +357,10 @@ md"
 Usando el algoritmo de Tiempo de Escape y multiple dispatch, defina nuevamente la función setmandelbrot, para obtener los datos necesarios (matriz) que defina los colores para cada punto de una región arbitraria. 
 "
 
-# ╔═╡ 5af85e8e-46c8-11eb-3de2-cf62fcb0614f
-"""
-	setmandelbrot(f::Function,test::Function,grid::Array{T,1} where T,iter::Integer)
-Crear una matriz de enteros correspondiente a los colores 
-"""
-function setmandelbrot(
-		f::Function,
-		test::Function,
-		grid::Array{T,1} where T,
-		iter::Integer
-	)
-	
-end
-
 # ╔═╡ e4797f76-40c9-11eb-02d6-35073745bec0
 begin
-	
+	colormandel = timeEscape(M, testJM, 0, 100)
+	heatmap(colormandel)
 end
 
 # ╔═╡ e531a9be-46e3-11eb-0219-0bb7ff3871c2
@@ -422,7 +372,8 @@ Usando el algoritmo de Tiempo de Escape y multiple dispatch, defina nuevamente l
 
 # ╔═╡ af6e5546-46d6-11eb-21cf-ef7281e43d44
 begin
-	
+	colorjulia = timeEscape(J, testJM, grid, 100)
+	heatmap(colorjulia)
 end
 
 # ╔═╡ 27c6bc88-46e4-11eb-2f01-9531af826324
@@ -434,7 +385,8 @@ Usando el algoritmo de Tiempo de Escape y multiple dispatch, defina nuevamente l
 
 # ╔═╡ 278afcae-46dd-11eb-2551-b7e85c38f1f2
 begin
-	
+	colorbio = timeEscape(B, testbio, grid, 10)
+	heatmap(colorbio)
 end
 
 # ╔═╡ c05869d8-46e4-11eb-1a10-e71db604ca8c
@@ -458,9 +410,6 @@ md"
 # ╟─c647eeb2-3b44-11eb-2637-9197f59f6490
 # ╟─ce1cb762-4629-11eb-0598-15119d777749
 # ╟─b667cda0-46e0-11eb-370d-41d8d7cdf7de
-# ╟─56c3949c-462c-11eb-058f-ef53a7395810
-# ╠═f915f344-3a00-11eb-16a9-6be5b192810c
-# ╟─f1207c62-4631-11eb-30cb-691cbcca8574
 # ╠═1dc63efc-39d6-11eb-3b8d-15da426e82a1
 # ╟─774af954-4635-11eb-31dd-17a273bf9b15
 # ╠═acda722e-4636-11eb-0a76-29912beacb1c
@@ -470,26 +419,23 @@ md"
 # ╠═6b6e04f0-4638-11eb-1401-6db76349254b
 # ╟─71f98b8a-4641-11eb-2c9c-7f49f8577365
 # ╠═c84bee02-4640-11eb-0dc2-57337e999b50
+# ╠═a3485442-595a-11eb-399e-e54347ef249c
 # ╟─fb3a891a-4634-11eb-2228-67741e0f82e2
 # ╠═828790ba-39d9-11eb-03bf-cbf806cba31a
+# ╠═63d9ef0e-595b-11eb-043f-3d7c0bf8c926
 # ╟─393b931a-46a0-11eb-361d-8da678672d65
-# ╠═1c510af2-46a0-11eb-08ac-a1d54104fd11
 # ╟─24bba08a-46e2-11eb-0e42-412ca935f3e7
 # ╟─94d3f144-46e2-11eb-1f3b-7f0ba366c99a
 # ╟─c7030f70-469e-11eb-1fc0-03060512aa15
 # ╟─3f322d18-463b-11eb-1560-0dfa38f7f644
-# ╠═73644592-463b-11eb-09c0-952848e159e3
 # ╠═553b382e-469e-11eb-3b55-3d189b08538c
 # ╟─639f176a-46e3-11eb-0d26-21e096ca0863
 # ╟─687d2356-463b-11eb-33a6-53321e36f77a
-# ╠═ce8536ce-469d-11eb-3f57-59b7ce9ac946
 # ╠═fc4feb92-3b5d-11eb-28ff-630169bd8fc2
 # ╟─847b1e16-46e3-11eb-1581-95c456a7482f
 # ╟─e270a720-469f-11eb-1608-57230535b389
-# ╠═f4f08ecc-469f-11eb-0d11-91bbe2f63dc8
 # ╠═9772cb98-469f-11eb-00b0-312e5a3b75dd
 # ╟─b27d4370-46e3-11eb-0b7d-fbe40c187c17
-# ╠═5af85e8e-46c8-11eb-3de2-cf62fcb0614f
 # ╠═e4797f76-40c9-11eb-02d6-35073745bec0
 # ╟─e531a9be-46e3-11eb-0219-0bb7ff3871c2
 # ╠═af6e5546-46d6-11eb-21cf-ef7281e43d44
